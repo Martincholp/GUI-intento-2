@@ -7,28 +7,26 @@ from locales import *
 '''Funciones y clases utilizadas como herramientas'''
 
 class Border(object):
-	"""Clase destinada a definir los bordes de los objetos."""
+    """Clase destinada a definir los bordes de los objetos."""
 
-	def __init__(self):
-	
-		self.color = Color.Gainsboro
-		self.size = 2
-		self.style = S_SOLID
-		self.show = True
-		
+    def __init__(self):
+    
+        self.color = Color.Gainsboro
+        self.size = 2
+        self.style = S_SOLID
+        self.show = True
+        
 
-	def draw(self, surface):
-		'''Dibuja el borde de la superficie pasada'''
+    def draw(self, surface):
+        '''Dibuja el borde de la superficie pasada'''
 
-		if not self.show:
-			return
+        if self.show:
+            
+            if self.style == S_SOLID:
+                pygame.draw.rect(surface, self.color, (0, 0, surface.get_width(), surface.get_height()), self.size)
 
-
-		if self.style == S_SOLID:
-			pygame.draw.rect(surface, self.color, (0, 0, surface.get_width(), surface.get_height()), self.size)
-
-			#elif self.style == S_DOT:
-		#    Implementar el borde punteado
+                #elif self.style == S_DOT:
+            #    Implementar el borde punteado
 
 
 class Layer(object):
@@ -47,74 +45,6 @@ class Layer(object):
         self.down_image = None
         self.disable_image = None
 
-
-class Screen(object):
-    """Clase que agrupa un conjunto de controles que define una pantalla. """
-
-    _screens = {}
-    _current = None
-    _prev = None
-
-
-    @staticmethod
-    def set_current(name):
-        '''Cambia la pantalla actual por la indicada en name'''
-        pass
-
-    @staticmethod
-    def set_prev():
-        '''Cambia la pantalla actual por la anterior'''
-        pass
-
-    @staticmethod
-    def screens():
-        '''Devuelve una lista con las pantallas disponibles'''
-        return Screen._screens.values()
-
-
-
-
-    def __init__(self, name):
-
-        super(Screen, self).__init__()
-        self._name = name
-        self._controls = []
-        self._background = Layer()  # Solo se utilizan las propiedades normal_color, normal_image, y type de la clase Layer()
-        self._focus = None
-        self._focus_rect = Border()
-
-    def addControl(self, control):
-        '''Agrega el control pasado a la lista de controles de la pantalla'''
-
-        if control.name in Screen._screens:  # Agrega el control solo si no existe en el diccionario
-            raise screenExistente(control.name)
-
-        Screen._screens[control.name] = control
-
-
-    def removeControl(self, control):
-        '''Quita un control de la lista de controles de la pantalla'''
-
-        if control.name in Screen._screens:
-            return Screen._screens.pop(control.name)
-        else:
-            raise controlInexistente(control.name)
-
-    def render(self, display):
-        '''Dibuja todos los controles de la pantalla en el display pasado'''
-
-        for ctl in Screen.screens():
-            ctl.render(display)
-
-
-
-    def focus_next(self):
-        '''Pasa el foco al siguiente control de la lista, o al siguiente elemento del control si lo tuviera.'''
-        pass
-
-    def focus_prev(self):
-        '''Pasa el foco al control anterior de la lista, o al elemento anterior del control si lo tuviera.'''
-        pass
 
                 
 

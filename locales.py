@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-'''Constantes locales utilizadas'''
+'''Constantes utilizadas para definir distintos conceptos'''
 
 ###################################################
 ##                                               ##
@@ -56,3 +56,17 @@ S_DOT = 1
 T_DRAW = 0
 T_IMAGE = 1
 
+
+###################################################
+##                                               ##
+##               DIRECCIONES                     ##
+##                                               ##
+##  Direcciones de movimiento, principalmente    ##
+##  asociadas con el paso del foco entre los     ##
+##  controles de una pantalla, o elementos de un ##
+##  mismo control.                               ##
+###################################################
+D_KEEP = 0  # No permite el movimiento
+D_NEXT = 1  # Solo permite moverse hacia el siguiente
+D_PREV = 2  # Solo permite moverse hacia el anterior
+D_PREVNEXT = 3 # Puede moverse en ambos sentidos
