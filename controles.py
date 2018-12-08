@@ -11,103 +11,113 @@ class Screen(object):
     """Clase que agrupa un conjunto de controles que define una pantalla. Recibe solo un parámetro, que es un string
     con el nombre de la pantalla, que debe ser único entre todas las pantallas."""
 
-    _screens = {}
-    _current = None
-    _prev = None
+    __screens = {}
+    __current = None
+    __prev = None
 
 
     @staticmethod
     def set_current(name):
         '''Cambia la pantalla actual por la indicada en name'''
-        Screen._prev = Screen._current
-        Screen._current = Screen._screens[name]
+        Screen.__prev = Screen.__current
+        Screen.__current = Screen.__screens[name]
 
     @staticmethod
     def get_current():
         '''Devuelve la pantalla actual'''
-        return Screen._current
+        return Screen.__current
 
 
     @staticmethod
     def set_prev():
         '''Cambia la pantalla actual por la anterior'''
-        Screen._current = Screen._prev
+        Screen.__current = Screen.__prev
 
     @staticmethod
     def screens():
         '''Devuelve una lista con las pantallas disponibles'''
-        return Screen._screens.values()
+        return Screen.__screens.values()
 
     
 
     def __init__(self, name):
 
         # Propiedades principales: nombre y controles
-        self._name = name
-        self._controls = {}
+        self.__name = name
+        self.__controls = {}
 
         # Establezco el fondo y sus caracteristicas
-        self._background_type = T_DRAW
-        self._background_color = Color.Black
-        self._background_image = None
+        self.__background_type = T_DRAW
+        self.__background_color = Color.Black
+        self.__background_image = None
 
 
         # Establezco el foco y sus caracteristicas
-        self._focus = None
-        self._focus_border = Border()
+        self.__focus = None
+        self.__focus_border = Border()
 
-        self._focus_border.color = Color.Red
-        self._focus_border.size = 1
-        self._focus_border.style = S_SOLID
-        self._focus_border.show = True
+        self.__focus_border.color = Color.Red
+        self.__focus_border.size = 1
+        self.__focus_border.style = S_SOLID
+        self.__focus_border.show = True
         
 
         # Agrego la pantalla al diccionario. Si ya existe lanzo una excepcion
-        if name in Screen._screens:
+        if name in Screen.__screens:
             raise screenExistente(name)
 
-        Screen._screens[name] = self
+        Screen.__screens[name] = self
 
 
     # PROPIEDADES
     @property
     def name(self):
         '''Nombre de la pantalla. Solo lectura'''
-        return self._name
+        return self.__name
     
     @property
     def background_color(self):
         '''Color de fondo para la pantalla'''
-        return self._background_color
+        return self.__background_color
     
     
     @background_color.setter
     def background_color(self, color):
-        self._background_color = color
+        self.__background_color = color
     
     @property
     def background_image(self):
         '''Imagen de fondo para la pantalla cuando se utiliza el fondo de tipo T_IMAGE'''
-        return self._background_image
+        return self.__background_image
     
     
     @background_image.setter
     def background_image(self, image):
-        self._background_image = image
+        self.__background_image = image
     
     @property
     def background_type(self):
         '''Tipo de fondo para la pantalla. Se puede seleccionar entre T_DROW o T_IMAGE'''
-        return self._background_type
+        return self.__background_type
     
     
     @background_type.setter
     def background_type(self, tipo):
-        self._background_type = tipo
-    
-    
-    
+        self.__background_type = tipo
 
+
+    @property
+    def focus_border(self):
+        '''Borde del control que tiene el foco'''
+        return self.__focus_border
+    
+    
+    @focus_border.setter
+    def focus_border(self, borde):
+        self.__focus_border = borde
+    
+    
+    
 
 
 
@@ -118,11 +128,11 @@ class Screen(object):
         '''Agrega el control pasado a la lista de controles de la pantalla'''
 
         # Agrega el control solo si no existe en el diccionario
-        if control.name in self._controls:  
+        if control.name in self.__controls:  
             raise controlExistente(control.name)
 
-        self._controls[control.name] = control
-        control._screen = self
+        self.__controls[control.name] = control
+        control._Control__screen = self
 
         # Verifica que el orden del foco en el control sea valido
         fo = [c.focusOrder for c in self.get_controls()]  # Lista de focusOrder usados
@@ -142,11 +152,11 @@ class Screen(object):
 
         for control in controles:
             # Agrega el control solo si no existe en el diccionario
-            if control.name in self._controls:  
+            if control.name in self.__controls:  
                 raise controlExistente(control.name)
 
-            self._controls[control.name] = control
-            control._screen = self
+            self.__controls[control.name] = control
+            control._Control__screen = self
 
             # Verifica que el orden del foco en el control sea valido
             fo = [c.focusOrder for c in self.get_controls()]  # Lista de focusOrder usados
@@ -164,8 +174,8 @@ class Screen(object):
     def removeControl(self, name):
         '''Quita el control de nombre name de la lista de controles de la pantalla y devuelve el control quitado'''
 
-        if name in self._controls:
-            c = self._controls.pop(name)
+        if name in self.__controls:
+            c = self.__controls.pop(name)
             c._Controls__screen = None
             return c
         else:
@@ -174,14 +184,14 @@ class Screen(object):
 
     def get_controls(self):
         '''Devuelve una lista con los controles de la pantalla'''
-        return self._controls.values()
+        return self.__controls.values()
 
 
     def get_control(self, name, raiseErr=True):
         '''Devuelve el control indicado en name. Si no existe y raiseErr=True lanza una excepcion, de lo contrario devuelve None'''
 
-        if name in self._controls:
-            return self._controls[name]
+        if name in self.__controls:
+            return self.__controls[name]
         else:
             if raiseErr:
                 raise controlInexistente
@@ -195,30 +205,42 @@ class Screen(object):
     
     def set_focus(self, control):
         '''Pongo el foco en el control pasado'''
-        self._focus = control
+        self.__focus = control
 
     def get_focus(self):
         '''Devuelvo el control que tiene el foco'''
-        return self._focus
+        return self.__focus
 
     def focus_next(self):
         '''Pasa el foco al siguiente control de la lista, o al siguiente elemento del control si lo tuviera.'''
 
+        def cmp(x, y): 
+            if x.focusOrder < y.focusOrder:
+                return -1
+            elif x.focusOrder > y.focusOrder:
+                return 1
+            else:
+                return 0
+
+        lo = self.get_controls()
+        lo.sort(cmp= cmp)  # Lista ordenada
         
-        if self._focus != None:
-            if self._focus.change_focus(D_NEXT):
-                lo = self.get_controls().sort(key=lambda ctrl: ctrl.focusOrder) # Lista ordenada
+        if self.__focus != None:
+            if self.__focus.change_focus(D_NEXT):
                 fin = True # Variable auxiliar que me sirve para saber si llegue al final de la lista
-            
+
                 for c in lo:
-                    if c.focusOrder > self._focus.focusOrder:  # Si durante el bucle el focusOrder es mayor que el actual...
-                        self._focus = c                        # ... asigno el encontrado como actual ...
-                        fin = False                            # ... cambio la bandera a False para indicar que no llegué hasta el final...
-                        break                                  # ... y salgo del bucle
+                    if c.focusOrder > self.__focus.focusOrder:  # Si durante el bucle el focusOrder es mayor que el actual...
+                        self.__focus = c                        # ... asigno el encontrado como actual ...
+                        fin = False                             # ... cambio la bandera a False para indicar que no llegué hasta el final...
+                        break                                   # ... y salgo del bucle
 
 
-                if fin:                       # Si en el bucle había llegado hasta el final, es xq el focusOrder actual era el mas alto ...
-                    self._focus = lo[0]       # ... y por lo tanto salió del bucle normalmente. En este caso asigno el primer control.
+                if fin:                        # Si en el bucle había llegado hasta el final, es xq el focusOrder actual era el mas alto ...
+                    self.__focus = lo[0]       # ... y por lo tanto salió del bucle normalmente. En este caso asigno el primer control.
+
+        else:
+            self.__focus = lo[0]  # Si no había ningún control en foco, coloco el primero de la lista de orden
 
 
 
@@ -227,32 +249,44 @@ class Screen(object):
     def focus_prev(self):
         '''Pasa el foco al control anterior de la lista, o al elemento anterior del control si lo tuviera.'''
 
-        if self._focus != None:
-            if self._focus.change_focus(D_PREV):
-                lo = self.get_controls().sort(reverse=True, key=lambda ctrl: ctrl.focusOrder) # Lista ordenada en reversa
+        def cmp(x, y): 
+            if x.focusOrder > y.focusOrder:
+                return -1
+            elif x.focusOrder < y.focusOrder:
+                return 1
+            else:
+                return 0
+
+        lo = self.get_controls()
+        lo.sort(cmp=cmp) # Lista ordenada en reversa
+        
+        if self.__focus != None:
+            if self.__focus.change_focus(D_PREV):
                 fin = True # Variable auxiliar que me sirve para saber si llegue al final de la lista
             
                 for c in lo:
-                    if c.focusOrder < self._focus.focusOrder:  # Si durante el bucle el focusOrder es menor que el actual...
-                        self._focus = c                        # ... asigno el encontrado como actual ...
-                        fin = False                            # ... cambio la bandera a False para indicar que no llegué hasta el final...
-                        break                                  # ... y salgo del bucle
+                    if c.focusOrder < self.__focus.focusOrder:  # Si durante el bucle el focusOrder es menor que el actual...
+                        self.__focus = c                        # ... asigno el encontrado como actual ...
+                        fin = False                             # ... cambio la bandera a False para indicar que no llegué hasta el final...
+                        break                                   # ... y salgo del bucle
 
 
-                if fin:                       # Si en el bucle había llegado hasta el final, es xq el focusOrder actual era el mas bajo ...
-                    self._focus = lo[0]       # ... y por lo tanto salió del bucle normalmente. En este caso asigno el primer control ...
+                if fin:                        # Si en el bucle había llegado hasta el final, es xq el focusOrder actual era el mas bajo ...
+                    self.__focus = lo[0]       # ... y por lo tanto salió del bucle normalmente. En este caso asigno el primer control ...
                                               # ... ya que al estar ordenada en reversa el primer elemento de la lista es el mayor
+        else:
+            self.__focus = lo[0]  # Si no había ningún control en foco, coloco el primero de la lista de orden
 
 
     @property
     def focus_border(self):
         '''Tipo de borde a dibujar para el control con el foco'''
-        return self._focus_border
+        return self.__focus_border
     
     
     @focus_border.setter
     def focus_border(self, borde):
-        self._focus_border = borde
+        self.__focus_border = borde
     
     
 
@@ -289,14 +323,14 @@ class Control(pygame.Surface):
     control, que debe ser único entre todos los controles."""
 
     # Propiedades de clase
-    _controls = {}
+    __controls = {}
 
 
     # Metodos estaticos
     @staticmethod
     def controls(name):
         '''Devuelve el control con nombre name, de entre todos los controles creados'''
-        return _controls[name]
+        return __controls[name]
 
 
 
@@ -304,22 +338,23 @@ class Control(pygame.Surface):
 
         super(Control, self).__init__((rect[2], rect[3]), pygame.HWSURFACE|pygame.SRCALPHA)
 
-        if name in Control._controls:
+        if name in Control.__controls:
             raise controlExistente(name)
 
-        self._name = name
-        self._pos = (rect[0], rect[1])
-        self._size = (rect[2], rect[3])
-        self._border = Border()
-        self._visible = True
-        self._enable = True
-        self._focusable = True
-        self._screen = None    #  Inicialmente no tiene pantalla
-        self._background = Layer()
-        self._foreground = Layer()
-        self._font = Font.Default
-        self._tag = None
-        self._focusOrder = 0
+        self.__name = name
+        self.__pos = (rect[0], rect[1])
+        self.__size = (rect[2], rect[3])
+        self.__border = Border()
+        self.__visible = True
+        self.__enable = True
+        self.__focusable = True
+        self.__screen = None    #  Inicialmente no tiene pantalla
+        self.__background = Layer()
+        self.__foreground = Layer()
+        self.__font = Font('Default')
+        #self.__font_color = Color.Black
+        self.__tag = None
+        self.__focusOrder = 0
 
         
 
@@ -327,42 +362,42 @@ class Control(pygame.Surface):
     @property
     def name(self):
         '''Nombre del control. Solo lectura'''
-        return self._name
+        return self.__name
 
     @property
     def pos(self):
         '''Posicion del control'''
-        return self._pos
+        return self.__pos
         
     @pos.setter
     def pos(self, val):
-        self._pos = val
+        self.__pos = val
 
     @property
     def left(self):
         '''Devuelve el borde izquierdo'''
-        return self._pos[0]
+        return self.__pos[0]
 
     @property
     def right(self):
         '''Devuelve el borde derecho'''
-        return self._pos[0]+_size[0]
+        return self.__pos[0]+__size[0]
     
     @property
     def top(self):
         '''Devuelve el borde superior'''
-        return self._pos[1]
+        return self.__pos[1]
 
     @property
     def bottom(self):
         '''Devuelve el borde inferior'''
-        return self._pos[1]+_size[1]
+        return self.__pos[1]+__size[1]
     
     
     @property
     def size(self):
         '''Tamaño del control. Solo lectura'''
-        return self._size
+        return self.__size
 
     def get_rect(self):
         '''Devuelve un objeto pygame.Rect() con el rectángulo del control'''
@@ -373,95 +408,107 @@ class Control(pygame.Surface):
     @property
     def border(self):
         '''Objeto de tipo Border() para definir el borde del control'''
-        return self._border
+        return self.__border
         
     @border.setter
     def border(self, val):
-        self._border = val
+        self.__border = val
 
     @property
     def visible(self):
         '''Indica si el control se debe dibujar o no'''
-        return self._visible
+        return self.__visible
         
     @visible.setter
     def visible(self, val):
-        self._visible = val
+        self.__visible = val
     
     
     @property
     def enable(self):
         '''Indica si el control puede interactuar con el usuario'''
-        return self._enable
+        return self.__enable
         
     @enable.setter
     def enable(self, val):
-        self._enable = val
+        self.__enable = val
     
 
     @property
     def focusable(self):
         '''Indica si el control puede obtener el foco'''
-        return self._focusable
+        return self.__focusable
         
     @focusable.setter
     def focusable(self, val):
-        self._focusable = val
+        self.__focusable = val
     
     
     @property
     def screen(self):
         '''Pantalla a la que pertenece el control. Solo lectura'''
-        return self._screen
+        return self.__screen
       
 
     @property
     def background(self):
         '''Capa de fondo del control'''
-        return self._background
+        return self.__background
         
     @background.setter
     def background(self, val):
-        self._background = val
+        self.__background = val
     
     @property
     def foreground(self):
         '''Capa frontal del control'''
-        return self._foreground
+        return self.__foreground
         
     @foreground.setter
     def foreground(self, val):
-        self._foreground = val
+        self.__foreground = val
     
     @property
     def font(self):
         '''Fuente a usar con el texto del control'''
-        return self._font
+        return self.__font
         
     @font.setter
     def font(self, val):
-        self._font = val
+        self.__font = val
+
+    # @property
+    # def font_color(self):
+    #     '''Color que se utilizara en el texto del control'''
+    #     return self.__font_color
+    
+    
+    # @font_color.setter
+    # def font_color(self, val):
+    #     self.__font_color = val
+    
+    
     
     @property
     def tag(self):
         '''Propiedad utilizada para guardar cualquier tipo de dato'''
-        return self._tag
+        return self.__tag
         
     @tag.setter
     def tag(self, val):
-        self._tag = val
+        self.__tag = val
     
     @property
     def focusOrder(self):
         '''Entero mayor o igual que 0 con el orden de obtención del foco. No pueden haber dos números iguales en una 
         misma pantalla, de ser así esta propiedad se modificará automáticamente al agregarla a la pantalla asignada.'''
-        return self._focusOrder
+        return self.__focusOrder
         
     @focusOrder.setter
     def focusOrder(self, val):
         if val < 0: 
             val = 0
-        self._focusOrder = val
+        self.__focusOrder = val
     
                                         
    
@@ -615,29 +662,12 @@ class Control(pygame.Surface):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     # METODOS Y FUNCIONES PARA MANEJO DE LA PANTALLA DEL CONTROL
 
     def drop_screen(self):
         '''Desvincula el control de cualquier pantalla'''
-        if self._screen != None:
-            self._screen.removeControl(self.name) # Este método del objeto Screen automáticamente coloca None en _screen
+        if self.__screen != None:
+            self.__screen.removeControl(self.name) # Este método del objeto Screen automáticamente coloca None en _screen
 
     def get_screen(self):
         '''Obtiene la pantalla del control. Es el mismo resultado que la propiedad screen'''
@@ -648,7 +678,7 @@ class Control(pygame.Surface):
 
         # Solo se puede asignar a una pantalla cuando no pertenece a ninguna. Si ya es parte de una pantalla debe
         # dejarla antes de pertenecer a otra. Cada control solo puede formar parte de una pantalla
-        if self._screen == None:
+        if self.__screen == None:
             pantalla.addControl(self) # Este método del objeto Screen asigna automáticamente la pantalla a _screen
 
         else:
@@ -660,3 +690,61 @@ class Control(pygame.Surface):
     def __repr__(self):
 
         return 'Control ' + self.name + ' perteneciente a la pantalla ' + self.screen.name
+
+
+class Button(Control):
+    '''Control de tipo botón. Recibe 3 parámetros, un Rect con su tamaño y posicion, un nombre que debe ser único, y 
+    una función que se ejecutará cuando se haga click sobre él. Otra propiedad importante es caption, que es el
+    texto que se muestra sobre el control, y que por defecto es igual al nombre del control. El texto se dibuja con
+    los colores del foreground'''
+
+    def __init__(self, rect, name, action):
+        super(Button, self).__init__(rect, name)
+        self.__action = action
+        self.__caption = name
+
+    @property
+    def caption(self):
+        '''Texto que se muestra sobre el botón'''
+        return self.__caption
+    
+    
+    @caption.setter
+    def caption(self, val):
+        self.__caption = val
+
+    @property
+    def action(self):
+        '''Función a ejecutar cuando se hace click sobre el botón. Solo lectura'''
+        return self.__action
+
+
+    def click(self, boton=None):
+        super(Button, self)
+        if self.is_hover():
+            self.action()
+
+
+    def update(self):
+        '''Actualiza los gráficos del control'''
+        super(Button, self).update()
+
+        imgtexto = self.font.render(self.caption, True)
+        
+        # Dibuja el texto sobre las superficies del foreground
+        self.foreground.normal_image.blit(imgtexto, (0,0))
+        self.foreground.hover_image.blit(imgtexto, (0,0))
+        self.foreground.down_image.blit(imgtexto, (0,0))
+        self.foreground.disable_image.blit(imgtexto, (0,0))
+
+        # Dibuja el borde del control, para que no quede por detras de los textos
+
+        if self.border.show:
+              # Normal
+            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+              # Hover
+            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Down
+            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Disable
+            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)

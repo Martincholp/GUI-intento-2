@@ -49,21 +49,7 @@ class Layer(object):
                 
 
 
-class Font(object):
-    '''Clase que agrupa algunos tamaños y fuentes'''
-
-    pygame.font.init()
-
-    Default = pygame.font.SysFont("Verdana", 20)
-    Small = pygame.font.SysFont("Verdana", 15)
-    Medium = pygame.font.SysFont("Verdana", 40)
-    Large = pygame.font.SysFont("Verdana", 60)
-    Scanner = pygame.font.SysFont("Verdana", 30)
-
-    def set_fontsize(self,v):
-        return pygame.font.SysFont("Verdana", v)
-
-
+    
 
 
 
@@ -288,3 +274,60 @@ class Color(object):
     for c in range(len(colores)):
         colDict[str_colores[c]] = colores[c]
 
+
+
+
+
+
+
+
+
+class Font(object):
+    '''Clase para definir las fuentes'''
+
+    pygame.font.init()
+
+    __size = {'Default' :  20,
+              'Small' : 15,
+              'Medium' : 40,
+              'Large' : 60,
+              'Scanner' : 30}
+
+    def set_fontsize(self,v):
+    	'''Devuelve una fuente con el tamaño especificado'''
+        return pygame.font.SysFont(self.__name, v)
+
+
+    def __init__(self, size='Default', color=Color.Black):
+    	self.__name = 'Verdana'
+    	self.__color = color
+    	self.__size = Font.__size[size]
+    	self.__font = self.set_fontsize(Font.__size[size])
+
+    @property
+    def name(self):
+        '''Nombre de la fuente'''
+        return self.__name
+    
+    
+    @name.setter
+    def name(self, val):
+        self.__name = val
+    
+    
+
+    @property
+    def color(self):
+        '''Color de la fuente. Si no se especifica se utiliza color negro'''
+        return self.__color
+    
+    
+    @color.setter
+    def color(self, val):
+        self.__color = val
+
+
+    def render(self, text, antialias):
+    	'''Devuelve una superficie con el texto dibujado en ella'''
+    	return self.__font.render(text, antialias, self.color)
+    
