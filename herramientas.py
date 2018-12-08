@@ -11,8 +11,8 @@ class Border(object):
 
     def __init__(self):
     
-        self.color = Color.Gainsboro
-        self.size = 2
+        self.color = Color.Blue
+        self.size = 3
         self.style = S_SOLID
         self.show = True
         
@@ -36,9 +36,9 @@ class Layer(object):
 
         self.type = T_DRAW
 
-        self.normal_color = Color.Gainsboro
-        self.hover_color = Color.White
-        self.down_color = Color.Silver
+        self.normal_color = Color.Silver
+        self.hover_color = Color.Gainsboro
+        self.down_color = Color.White
         self.disable_color = Color.Gray
         self.normal_image = None
         self.hover_image = None

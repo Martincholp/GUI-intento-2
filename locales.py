@@ -70,3 +70,14 @@ D_KEEP = 0  # No permite el movimiento
 D_NEXT = 1  # Solo permite moverse hacia el siguiente
 D_PREV = 2  # Solo permite moverse hacia el anterior
 D_PREVNEXT = 3 # Puede moverse en ambos sentidos
+
+
+###################################################
+##                                               ##
+##             BOTONES DEL MOUSE                 ##
+##                                               ##
+##  Constantes para los botones del mouse        ##
+###################################################
+M_BUTTON1 = 1
+M_BUTTON2 = 2
+M_BUTTON3 = 4

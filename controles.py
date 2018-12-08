@@ -19,12 +19,19 @@ class Screen(object):
     @staticmethod
     def set_current(name):
         '''Cambia la pantalla actual por la indicada en name'''
-        pass
+        Screen._prev = Screen._current
+        Screen._current = Screen._screens[name]
+
+    @staticmethod
+    def get_current():
+        '''Devuelve la pantalla actual'''
+        return Screen._current
+
 
     @staticmethod
     def set_prev():
         '''Cambia la pantalla actual por la anterior'''
-        pass
+        Screen._current = Screen._prev
 
     @staticmethod
     def screens():
@@ -62,6 +69,44 @@ class Screen(object):
         Screen._screens[name] = self
 
 
+    # PROPIEDADES
+    @property
+    def name(self):
+        '''Nombre de la pantalla. Solo lectura'''
+        return self._name
+    
+    @property
+    def background_color(self):
+        '''Color de fondo para la pantalla'''
+        return self._background_color
+    
+    
+    @background_color.setter
+    def background_color(self, color):
+        self._background_color = color
+    
+    @property
+    def background_image(self):
+        '''Imagen de fondo para la pantalla cuando se utiliza el fondo de tipo T_IMAGE'''
+        return self._background_image
+    
+    
+    @background_image.setter
+    def background_image(self, image):
+        self._background_image = image
+    
+    @property
+    def background_type(self):
+        '''Tipo de fondo para la pantalla. Se puede seleccionar entre T_DROW o T_IMAGE'''
+        return self._background_type
+    
+    
+    @background_type.setter
+    def background_type(self, tipo):
+        self._background_type = tipo
+    
+    
+    
 
 
 
@@ -77,10 +122,10 @@ class Screen(object):
             raise controlExistente(control.name)
 
         self._controls[control.name] = control
-        control._Controls__screen = self
+        control._screen = self
 
         # Verifica que el orden del foco en el control sea valido
-        fo = [n for self.get_controls().focusOrder]  # Lista de focusOrder usados
+        fo = [c.focusOrder for c in self.get_controls()]  # Lista de focusOrder usados
 
         if control.focusOrder in fo: # Si el orden del control ya existe ...
             n = 1
@@ -88,6 +133,30 @@ class Screen(object):
                 n += 1
 
             control.focusOrder = n   # ... y se lo asigno al control
+
+    def addControls(self, *controles):
+        '''Agrega los controles pasados a la lista de controles de la pantalla'''
+
+        if len(controles)==0:  # Si no paso ningún control lanzo una excepción
+            raise TypeError('addControls() takes at least 1 argument (0 given)')
+
+        for control in controles:
+            # Agrega el control solo si no existe en el diccionario
+            if control.name in self._controls:  
+                raise controlExistente(control.name)
+
+            self._controls[control.name] = control
+            control._screen = self
+
+            # Verifica que el orden del foco en el control sea valido
+            fo = [c.focusOrder for c in self.get_controls()]  # Lista de focusOrder usados
+
+            if control.focusOrder in fo: # Si el orden del control ya existe ...
+                n = 1
+                while n in fo:           # ... Busco un orden nuevo que sea valido ...
+                    n += 1
+
+                control.focusOrder = n   # ... y se lo asigno al control
 
 
 
@@ -127,6 +196,10 @@ class Screen(object):
     def set_focus(self, control):
         '''Pongo el foco en el control pasado'''
         self._focus = control
+
+    def get_focus(self):
+        '''Devuelvo el control que tiene el foco'''
+        return self._focus
 
     def focus_next(self):
         '''Pasa el foco al siguiente control de la lista, o al siguiente elemento del control si lo tuviera.'''
@@ -171,6 +244,17 @@ class Screen(object):
                                               # ... ya que al estar ordenada en reversa el primer elemento de la lista es el mayor
 
 
+    @property
+    def focus_border(self):
+        '''Tipo de borde a dibujar para el control con el foco'''
+        return self._focus_border
+    
+    
+    @focus_border.setter
+    def focus_border(self, borde):
+        self._focus_border = borde
+    
+    
 
     # FUNCIONES DE DIBUJADO
 
@@ -180,6 +264,20 @@ class Screen(object):
         for ctl in self.get_controls():
             ctl.render(display)
 
+    def update(self):
+        '''Realiza update de todos los controles de la pantalla'''
+
+        for ctl in self.get_controls():
+            ctl.update()
+
+
+    # FUNCIONES ESPECIALES
+    def __repr__(self):
+        strControles = '\n'
+        for n in self.get_controls():
+            strControles = strControles + n.name + '\n'
+
+        return 'Pantalla: ' + self.name + '\n Controles: ' + strControles
 
 class Control(pygame.Surface):
     """Clase base de la cual derivan todos los controles. En ésta clase están definidas las propiedades y métodos que
@@ -234,16 +332,43 @@ class Control(pygame.Surface):
     @property
     def pos(self):
         '''Posicion del control'''
-        return self.pos
+        return self._pos
         
     @pos.setter
     def pos(self, val):
-        self._nombre = val
+        self._pos = val
+
+    @property
+    def left(self):
+        '''Devuelve el borde izquierdo'''
+        return self._pos[0]
+
+    @property
+    def right(self):
+        '''Devuelve el borde derecho'''
+        return self._pos[0]+_size[0]
+    
+    @property
+    def top(self):
+        '''Devuelve el borde superior'''
+        return self._pos[1]
+
+    @property
+    def bottom(self):
+        '''Devuelve el borde inferior'''
+        return self._pos[1]+_size[1]
+    
     
     @property
     def size(self):
         '''Tamaño del control. Solo lectura'''
         return self._size
+
+    def get_rect(self):
+        '''Devuelve un objeto pygame.Rect() con el rectángulo del control'''
+
+        # Este método sobreescribe la funcion del mismo nombre de la clase pygame.Surface()
+        return pygame.Rect(self.pos, self.size)
 
     @property
     def border(self):
@@ -342,19 +467,43 @@ class Control(pygame.Surface):
    
     # VERIFICACIONES
 
-    def is_hover():
+    def is_hover(self):
         '''Devuelve un entero indicando si el mouse está sobre el control. Si el resultado es 0 el mouse se encuentra
         fuera del control, si es distinto de 0 está sobre el control.'''
-        pass
 
-    def is_down():
+        # Si el control tiene varias zonas interactivas extender esta función para que devuelva un entero distinto de 0
+        # indicando sobre que zona se encuentra. 
+
+        if self.visible:  
+            return int(self.get_rect().collidepoint(pygame.mouse.get_pos()))
+
+    def is_down(self):
         '''Devuelve un entero indicando si algún botón del mouse está presionado sobre el control. Si el resultado es 0
-        no hay ningún botón presionado. De ser distinto de 0, el número obtenido indica que botón hay presionado'''
-        pass
+        no hay ningún botón presionado. De ser distinto de 0, el número obtenido indica que botón hay presionado. 
+        Notar que si hay mas de un botón presionado el resultado será la suma de ambos botones.
+        Los posibles valores obtenidos son los siguientes:
+                          Ninguno = 0
+                             Left = 1
+                            Right = 2
+                     Left + Right = 3
+                           Middle = 4
+                    Middle + Left = 5
+                   Middle + Right = 6
+            Middle + Left + Right = 7
+            '''
+        if self.is_hover() and self.enable:
 
-    def is_focus():
+            btns = pygame.mouse.get_pressed()
+
+            return (int(btns[0]) + int(btns[1])*2 + int(btns[2])*4)
+        else:   
+            return 0
+            
+
+    def is_focus(self):
         '''Devuelve True si el foco está situado sobre el control, de lo contrario devuelve False'''
-        pass
+
+        return self == self.screen.get_focus()
 
     def change_focus(self, dir=None):
         '''Verifica si el control puede soltar el foco. Si dir=None solo es una consulta y devuelve un valor de 
@@ -370,14 +519,117 @@ class Control(pygame.Surface):
     
     # METODOS Y FUNCIONES PARA EXTENDER EN LAS CLASES DERIVADAS
 
-    def update():
+    def update(self):
         '''Actualiza los gráficos del control. Debe llamarse a este método cuando cambia alguna propiedad relacionada a 
         los gráficos'''
-        pass
+        
+        # Inicializo las superficies del control
+        self.background.normal_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.background.hover_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.background.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.background.disable_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
 
-    def render(dislay):
+        self.foreground.normal_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.foreground.hover_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.foreground.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.foreground.disable_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+
+        # Limpio los background
+        self.background.normal_image.fill(self.background.normal_color)
+        self.background.hover_image.fill(self.background.hover_color)
+        self.background.down_image.fill(self.background.down_color)
+        self.background.disable_image.fill(self.background.disable_color)
+        # Los foreground son transparentes
+        self.foreground.normal_image.fill(Color.Transparent)
+        self.foreground.hover_image.fill(Color.Transparent)
+        self.foreground.down_image.fill(Color.Transparent)
+        self.foreground.disable_image.fill(Color.Transparent)
+
+
+
+        # Dibuja el borde del control
+
+        if self.border.show:
+              # Normal
+            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+              # Hover
+            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Down
+            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Disable
+            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+
+
+
+
+    def render(self, display):
         '''Dibuja el control en el display pasado'''
-        pass
+        
+        if self.visible:
+            if not self.enable:
+                display.blit(self.background.disable_image, self.pos)
+                display.blit(self.foreground.disable_image, self.pos)
+            else:
+                if self.is_hover():
+                    if self.is_down():
+                        display.blit(self.background.down_image, self.pos)
+                        display.blit(self.foreground.down_image, self.pos)
+                    else:
+                        display.blit(self.background.hover_image, self.pos)
+                        display.blit(self.foreground.hover_image, self.pos)
+                else:
+                    display.blit(self.background.normal_image, self.pos)
+                    display.blit(self.foreground.normal_image, self.pos)
+
+            if self.is_focus(): 
+                pygame.draw.rect(display, self.screen.focus_border.color, (self.left, self.top ,self.get_width(),self.get_height()), self.screen.focus_border.size)
+
+            return True
+        else:
+            return False
+
+
+
+
+
+
+    def click(self, boton=None):
+        '''Método a llamar cuando se hace click. Devuelve 1 si está encima del control, de lo contrario devuelve 0'''
+
+        ##### IMPORTANTE: Esta funcion debe sobreescribirse en todas las clases derivadas que requieran controlar el click       
+       
+        hover = self.is_hover() # Guardo el resultado para no llamar a is_hover() 2 veces
+
+        if hover:
+            if self.enable:
+                if self.focusable:
+                    self.screen.set_focus(self)
+            
+        else:
+            self.screen.set_focus(None)
+            
+        return hover
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     # METODOS Y FUNCIONES PARA MANEJO DE LA PANTALLA DEL CONTROL
@@ -403,4 +655,8 @@ class Control(pygame.Surface):
             raise screenAsignada(self.name)
 
 
-        
+    # FUNCIONES ESPECIALES
+
+    def __repr__(self):
+
+        return 'Control ' + self.name + ' perteneciente a la pantalla ' + self.screen.name
