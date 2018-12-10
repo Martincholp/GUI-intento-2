@@ -19,8 +19,18 @@ class Screen(object):
     @staticmethod
     def set_current(name):
         '''Cambia la pantalla actual por la indicada en name'''
-        Screen.__prev = Screen.__current
-        Screen.__current = Screen.__screens[name]
+
+        if Screen.__current != None:
+            if name != Screen.__current.name:  # Si el nombre de current es igual a la que cambio, entonces no hago nada
+                Screen.__prev = Screen.__current
+                Screen.__current = Screen.__screens[name]
+        else:
+            # Si inicialmente el current era None estoy comenzado, entonces inicializo las dos con la pantalla pasada
+            Screen.__current = Screen.__screens[name]
+            Screen.__prev = Screen.__current
+
+
+
 
     @staticmethod
     def get_current():
@@ -31,13 +41,14 @@ class Screen(object):
     @staticmethod
     def set_prev():
         '''Cambia la pantalla actual por la anterior'''
+        aux = Screen.__current
         Screen.__current = Screen.__prev
+        Screen.__prev = aux
 
     @staticmethod
     def screens():
         '''Devuelve una lista con las pantallas disponibles'''
         return Screen.__screens.values()
-
     
 
     def __init__(self, name):
@@ -222,7 +233,7 @@ class Screen(object):
             else:
                 return 0
 
-        lo = self.get_controls()
+        lo = [ c for c in self.get_controls() if c.focusable]
         lo.sort(cmp= cmp)  # Lista ordenada
         
         if self.__focus != None:
@@ -257,7 +268,7 @@ class Screen(object):
             else:
                 return 0
 
-        lo = self.get_controls()
+        lo = [ c for c in self.get_controls() if c.focusable]
         lo.sort(cmp=cmp) # Lista ordenada en reversa
         
         if self.__focus != None:
@@ -358,6 +369,7 @@ class Control(pygame.Surface):
 
         
 
+    # PROPIEDADES
 
     @property
     def name(self):
@@ -628,6 +640,7 @@ class Control(pygame.Surface):
                     display.blit(self.background.normal_image, self.pos)
                     display.blit(self.foreground.normal_image, self.pos)
 
+            # Dibujo el rectángulo que indica que tiene el foco
             if self.is_focus(): 
                 pygame.draw.rect(display, self.screen.focus_border.color, (self.left, self.top ,self.get_width(),self.get_height()), self.screen.focus_border.size)
 
@@ -702,6 +715,7 @@ class Button(Control):
         super(Button, self).__init__(rect, name)
         self.__action = action
         self.__caption = name
+        self.__align = A_CENTER
 
     @property
     def caption(self):
@@ -718,6 +732,18 @@ class Button(Control):
         '''Función a ejecutar cuando se hace click sobre el botón. Solo lectura'''
         return self.__action
 
+    @property
+    def align(self):
+        '''Alineación del texto en el botón'''
+        return self.__align
+    
+    
+    @align.setter
+    def align(self, val):
+        self.__align = val
+    
+    
+
 
     def click(self, boton=None):
         super(Button, self)
@@ -729,13 +755,43 @@ class Button(Control):
         '''Actualiza los gráficos del control'''
         super(Button, self).update()
 
+        # Texto renderizado
         imgtexto = self.font.render(self.caption, True)
         
+        # Obtiene las dimensiones del texto
+        imgtextoWidth, imgtextoHeight = self.font.size(self.caption) 
+
+        # Calculo la posicion
+            # Valor del usuario
+        if self.align == A_MANUAL:
+            posX, posY = self.__pos_text
+        
+            # Posicion X
+        if self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
+            posX = 0
+        
+        if self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
+            posX = self.get_width()/2 - imgtextoWidth/2
+
+        if self.align == A_RIGHT or self.align == A_BOTTOMRIGHT or self.align == A_TOPRIGHT:
+            posX = self.get_width() - imgtextoWidth 
+
+            # Posicion Y
+        if self.align == A_TOPLEFT or self.align == A_TOP or self.align == A_TOPRIGHT:
+            posY = 0
+        
+        if self.align == A_CENTER or self.align == A_LEFT or self.align == A_RIGHT:
+            posY = self.get_height()/2 - imgtextoHeight/2
+
+        if self.align == A_BOTTOMLEFT or self.align == A_BOTTOMRIGHT or self.align == A_BOTTOM:
+            posY = self.get_height() - imgtextoHeight
+
+
         # Dibuja el texto sobre las superficies del foreground
-        self.foreground.normal_image.blit(imgtexto, (0,0))
-        self.foreground.hover_image.blit(imgtexto, (0,0))
-        self.foreground.down_image.blit(imgtexto, (0,0))
-        self.foreground.disable_image.blit(imgtexto, (0,0))
+        self.foreground.normal_image.blit(imgtexto, (posX, posY))
+        self.foreground.hover_image.blit(imgtexto, (posX, posY))
+        self.foreground.down_image.blit(imgtexto, (posX, posY))
+        self.foreground.disable_image.blit(imgtexto, (posX, posY))
 
         # Dibuja el borde del control, para que no quede por detras de los textos
 
@@ -748,3 +804,116 @@ class Button(Control):
             pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
             pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+
+
+class Label(Control):
+    '''Control para mostrar un texto sin interacción con el usuario'''
+
+    def __init__(self, rect, name, texto):
+        super(Label, self).__init__(rect, name)
+
+        # Configuracion del texto
+        self.__text = texto
+        self.__align = A_CENTER
+        self.__pos_text = (0,0)
+
+
+        # Como un label no interactúa con el usuario, lo primero es hacer que no reciba el foco, y ademas el normal, hover y down deben ser 
+        # del mismo color. Este comportamiento puede ser cambiado por el usuario
+        self.focusable = False  # El label no puede recibir el foco
+        col = self.background.normal_color
+        self.background.hover_color = col
+        self.background.down_color = col
+
+
+
+    @property
+    def text(self):
+        '''Texto del Label'''
+        return self.__text
+
+    @text.setter
+    def text(self, texto):
+        
+        self.__text = texto
+
+    @property
+    def pos_text(self):
+        '''Posición del texto cuando se setea la alineación manual'''
+        return self.__pos_text
+    
+    
+    @pos_text.setter
+    def pos_text(self, val):
+        self.__pos_text = val
+
+
+    @property
+    def align(self):
+        '''Alineación del texto'''
+        return self.__align
+    
+    
+    @align.setter
+    def align(self, val):
+        self.__align = val
+
+
+    def update(self):
+#        '''Actualiza los gráficos del control'''
+
+        super(Label, self).update()
+
+        # Texto renderizado
+        imgtexto = self.font.render(self.text, True)
+        
+        # Obtiene las dimensiones del texto
+        imgtextoWidth, imgtextoHeight = self.font.size(self.text) 
+
+        # Calculo la posicion
+            # Valor del usuario
+        if self.align == A_MANUAL:
+            posX, posY = self.__pos_text
+        
+            # Posicion X
+        if self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
+            posX = 0
+        
+        if self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
+            posX = self.get_width()/2 - imgtextoWidth/2
+
+        if self.align == A_RIGHT or self.align == A_BOTTOMRIGHT or self.align == A_TOPRIGHT:
+            posX = self.get_width() - imgtextoWidth 
+
+            # Posicion Y
+        if self.align == A_TOPLEFT or self.align == A_TOP or self.align == A_TOPRIGHT:
+            posY = 0
+        
+        if self.align == A_CENTER or self.align == A_LEFT or self.align == A_RIGHT:
+            posY = self.get_height()/2 - imgtextoHeight/2
+
+        if self.align == A_BOTTOMLEFT or self.align == A_BOTTOMRIGHT or self.align == A_BOTTOM:
+            posY = self.get_height() - imgtextoHeight
+
+
+        # Dibuja el texto sobre las superficies del foreground
+        self.foreground.normal_image.blit(imgtexto, (posX, posY))
+        self.foreground.hover_image.blit(imgtexto, (posX, posY))
+        self.foreground.down_image.blit(imgtexto, (posX, posY))
+        self.foreground.disable_image.blit(imgtexto, (posX, posY))
+
+        # Dibuja el borde del control, para que no quede por detras de los textos
+
+        if self.border.show:
+              # Normal
+            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+              # Hover
+            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Down
+            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Disable
+            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+
+
+
+

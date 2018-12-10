@@ -330,4 +330,8 @@ class Font(object):
     def render(self, text, antialias):
     	'''Devuelve una superficie con el texto dibujado en ella'''
     	return self.__font.render(text, antialias, self.color)
+
+    def size(self, texto):
+    	'''Dimensiones que tendrá la imagen renderizada del texto pasado'''
+    	return self.__font.size(texto) 
     

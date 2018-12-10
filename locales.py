@@ -31,6 +31,7 @@ A_TOPLEFT = 5
 A_TOPRIGHT = 6
 A_BOTTOMLEFT = 7
 A_BOTTOMRIGHT = 8
+A_MANUAL = 9
 
 
 ###################################################
