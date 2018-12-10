@@ -216,7 +216,9 @@ class Screen(object):
     
     def set_focus(self, control):
         '''Pongo el foco en el control pasado'''
-        self.__focus = control
+        if control != None:
+            if control.focusable and control.enable:
+                self.__focus = control
 
     def get_focus(self):
         '''Devuelvo el control que tiene el foco'''
@@ -233,7 +235,7 @@ class Screen(object):
             else:
                 return 0
 
-        lo = [ c for c in self.get_controls() if c.focusable]
+        lo = [ c for c in self.get_controls() if c.focusable and c.enable]
         lo.sort(cmp= cmp)  # Lista ordenada
         
         if self.__focus != None:
@@ -268,7 +270,7 @@ class Screen(object):
             else:
                 return 0
 
-        lo = [ c for c in self.get_controls() if c.focusable]
+        lo = [ c for c in self.get_controls() if c.focusable and c.enable]
         lo.sort(cmp=cmp) # Lista ordenada en reversa
         
         if self.__focus != None:
@@ -746,10 +748,19 @@ class Button(Control):
 
 
     def click(self, boton=None):
-        super(Button, self)
-        if self.is_hover():
-            self.action()
+        '''Método a llamar cuando se hace click. Devuelve 1 si está encima del control, de lo contrario devuelve 0'''
+       
+        hover = self.is_hover() # Guardo el resultado para no llamar a is_hover() 2 veces
 
+        if hover and self.enable and self.focusable:
+            self.screen.set_focus(self)
+            self.action()
+            
+        else:
+            self.screen.set_focus(None)
+            
+        return hover
+        
 
     def update(self):
         '''Actualiza los gráficos del control'''
@@ -860,7 +871,7 @@ class Label(Control):
 
 
     def update(self):
-#        '''Actualiza los gráficos del control'''
+        '''Actualiza los gráficos del control'''
 
         super(Label, self).update()
 
@@ -917,3 +928,156 @@ class Label(Control):
 
 
 
+class Image(Control):
+    '''Contenedor para mostrar una imagen'''
+
+    def __init__(self, rect, name, imagen=None):
+        super(Image, self).__init__(rect, name)
+        self.__image = imagen
+        self.__align = A_CENTER
+        self.__pos_image = (0, 0)
+
+
+        # Como un no interactúa con el usuario, lo primero es hacer que no reciba el foco, y ademas el normal, hover y down deben ser 
+        # del mismo color, que será transparente por default. Este comportamiento puede ser cambiado por el usuario
+        self.focusable = False  # El label no puede recibir el foco
+        self.background.normal_color = Color.Transparent
+        self.background.hover_color = Color.Transparent
+        self.background.down_color = Color.Transparent
+
+        # Por defecto no se mostrará el borde
+        self.border.show = False
+
+
+    @property
+    def image(self):
+        '''Imagen que mostrará el control'''
+        return self.__image
+    
+    
+    @image.setter
+    def image(self, val):
+        self.__image = val
+    
+    @property
+    def pos_image(self):
+        '''Posición de la imagen'cuando se setea la alineacón manual'''
+        return self.__pos_image
+    
+    
+    @pos_image.setter
+    def pos_image(self, val):
+        self.__pos_image = val
+
+    @property
+    def align(self):
+        '''Alineación de la imagen'''
+        return self.__align
+    
+    
+    @align.setter
+    def align(self, val):
+        self.__align = val
+    
+    
+    
+    
+    def load_image(self, path):
+        '''Carga una imagen en el control desde un archivo. Los tipos de archivo soportados son los siguientes:
+            *  JPG
+            *  PNG
+            *  GIF (no-animado)
+            *  BMP
+            *  PCX
+            *  TGA (sin comprimir)
+            *  TIF
+            *  LBM
+            *  PBM
+            *  PGM
+            *  PPM
+            *  XPM
+
+           Nota: El control no se redimensiona al cargar la imagen. Para que el control tenga el mismo tamaño debe ser
+           creado inicialmente con el tamaño correcto. Se sugieren los siguientes codigos para conseguir esto:
+
+           Caso 1:
+                imagen_control = pygame.image.load(img.png)
+                control_img = Image(imagen_control.get_rect(), nombre_control, imagen_control)
+                control_img.pos = (posX, posY)
+
+           Caso 2:
+                rect_control = (posX, posY, img_width, img_height)  # Las dimensiones de la imagen deben conocerse de antemano
+                control_img = Image(rect_control, nombre_control)
+                control_img.load_image(img.png) '''
+
+        self.image = pygame.image.load(path)
+        return self.image
+
+
+    def fit_image(self):
+        '''Ajusta la imagen a las dimensiones del control. Esto no modifica las dimensiones del control. Luego de llamar
+        a esta funcion se debe llamar a update() para que tengan efecto los cambios.'''
+
+        if self.image != None:
+            # El mismo tamño del control, las mismas caracteristicas que la imagen actual
+            print self.size
+            print self.image
+            nueva = pygame.Surface(self.size, 0, self.image)  
+            pygame.transform.smoothscale(self.image, self.size, nueva)
+            self.image = nueva
+            return self.image
+
+    def update(self):
+        '''Actualiza los gráficos del control'''
+        super(Image, self).update()
+        
+        # Obtiene las dimensiones de la imagen
+        if self.image == None:
+            self.image = pygame.Surface(self.get_size(), pygame.HWSURFACE|pygame.SRCALPHA)
+            self.image.fill(Color.Transparent)
+
+        imgWidth, imgHeight = self.image.get_size() 
+
+        # Calculo la posicion
+            # Valor del usuario
+        if self.align == A_MANUAL:
+            posX, posY = self.__pos_image
+        
+            # Posicion X
+        if self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
+            posX = 0
+        
+        if self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
+            posX = self.get_width()/2 - imgWidth/2
+
+        if self.align == A_RIGHT or self.align == A_BOTTOMRIGHT or self.align == A_TOPRIGHT:
+            posX = self.get_width() - imgWidth 
+
+            # Posicion Y
+        if self.align == A_TOPLEFT or self.align == A_TOP or self.align == A_TOPRIGHT:
+            posY = 0
+        
+        if self.align == A_CENTER or self.align == A_LEFT or self.align == A_RIGHT:
+            posY = self.get_height()/2 - imgHeight/2
+
+        if self.align == A_BOTTOMLEFT or self.align == A_BOTTOMRIGHT or self.align == A_BOTTOM:
+            posY = self.get_height() - imgHeight
+
+
+        # Dibuja el texto sobre las superficies del foreground
+        self.foreground.normal_image.blit(self.image, (posX, posY))
+        self.foreground.hover_image.blit(self.image, (posX, posY))
+        self.foreground.down_image.blit(self.image, (posX, posY))
+        self.foreground.disable_image.blit(self.image, (posX, posY))
+
+        # Dibuja el borde del control, para que no quede por detras de los textos
+
+        if self.border.show:
+              # Normal
+            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+              # Hover
+            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Down
+            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Disable
+            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
