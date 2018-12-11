@@ -363,9 +363,9 @@ class Control(pygame.Surface):
         self.__focusable = True
         self.__screen = None    #  Inicialmente no tiene pantalla
         self.__background = Layer()
+        self.__midground = Layer()
         self.__foreground = Layer()
         self.__font = Font('Default')
-        #self.__font_color = Color.Black
         self.__tag = None
         self.__focusOrder = 0
 
@@ -473,6 +473,17 @@ class Control(pygame.Surface):
     def background(self, val):
         self.__background = val
     
+    @property
+    def midground(self):
+        '''Capa del medio del control'''
+        return self.__midground
+    
+    
+    @midground.setter
+    def midground(self, val):
+        self.__midground = val
+    
+
     @property
     def foreground(self):
         '''Capa frontal del control'''
@@ -590,6 +601,11 @@ class Control(pygame.Surface):
         self.background.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
         self.background.disable_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
 
+        self.midground.normal_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.midground.hover_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.midground.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.midground.disable_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+
         self.foreground.normal_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
         self.foreground.hover_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
         self.foreground.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
@@ -600,7 +616,12 @@ class Control(pygame.Surface):
         self.background.hover_image.fill(self.background.hover_color)
         self.background.down_image.fill(self.background.down_color)
         self.background.disable_image.fill(self.background.disable_color)
-        # Los foreground son transparentes
+        # Los midground son transparentes
+        self.midground.normal_image.fill(Color.Transparent)
+        self.midground.hover_image.fill(Color.Transparent)
+        self.midground.down_image.fill(Color.Transparent)
+        self.midground.disable_image.fill(Color.Transparent)
+        # Los foreground tambien son transparentes
         self.foreground.normal_image.fill(Color.Transparent)
         self.foreground.hover_image.fill(Color.Transparent)
         self.foreground.down_image.fill(Color.Transparent)
@@ -612,13 +633,13 @@ class Control(pygame.Surface):
 
         if self.border.show:
               # Normal
-            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
               # Hover
-            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Down
-            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
-            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
 
@@ -629,17 +650,21 @@ class Control(pygame.Surface):
         if self.visible:
             if not self.enable:
                 display.blit(self.background.disable_image, self.pos)
+                display.blit(self.midground.disable_image, self.pos)
                 display.blit(self.foreground.disable_image, self.pos)
             else:
                 if self.is_hover():
                     if self.is_down():
                         display.blit(self.background.down_image, self.pos)
+                        display.blit(self.midground.down_image, self.pos)
                         display.blit(self.foreground.down_image, self.pos)
                     else:
                         display.blit(self.background.hover_image, self.pos)
+                        display.blit(self.midground.hover_image, self.pos)
                         display.blit(self.foreground.hover_image, self.pos)
                 else:
                     display.blit(self.background.normal_image, self.pos)
+                    display.blit(self.midground.normal_image, self.pos)
                     display.blit(self.foreground.normal_image, self.pos)
 
             # Dibujo el rectángulo que indica que tiene el foco
@@ -798,23 +823,23 @@ class Button(Control):
             posY = self.get_height() - imgtextoHeight
 
 
-        # Dibuja el texto sobre las superficies del foreground
-        self.foreground.normal_image.blit(imgtexto, (posX, posY))
-        self.foreground.hover_image.blit(imgtexto, (posX, posY))
-        self.foreground.down_image.blit(imgtexto, (posX, posY))
-        self.foreground.disable_image.blit(imgtexto, (posX, posY))
+        # Dibuja el texto sobre las superficies del midground
+        self.midground.normal_image.blit(imgtexto, (posX, posY))
+        self.midground.hover_image.blit(imgtexto, (posX, posY))
+        self.midground.down_image.blit(imgtexto, (posX, posY))
+        self.midground.disable_image.blit(imgtexto, (posX, posY))
 
         # Dibuja el borde del control, para que no quede por detras de los textos
 
         if self.border.show:
               # Normal
-            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
               # Hover
-            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Down
-            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
-            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
 class Label(Control):
@@ -907,23 +932,23 @@ class Label(Control):
             posY = self.get_height() - imgtextoHeight
 
 
-        # Dibuja el texto sobre las superficies del foreground
-        self.foreground.normal_image.blit(imgtexto, (posX, posY))
-        self.foreground.hover_image.blit(imgtexto, (posX, posY))
-        self.foreground.down_image.blit(imgtexto, (posX, posY))
-        self.foreground.disable_image.blit(imgtexto, (posX, posY))
+        # Dibuja el texto sobre las superficies del midground
+        self.midground.normal_image.blit(imgtexto, (posX, posY))
+        self.midground.hover_image.blit(imgtexto, (posX, posY))
+        self.midground.down_image.blit(imgtexto, (posX, posY))
+        self.midground.disable_image.blit(imgtexto, (posX, posY))
 
         # Dibuja el borde del control, para que no quede por detras de los textos
 
         if self.border.show:
               # Normal
-            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
               # Hover
-            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Down
-            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
-            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
 
@@ -938,7 +963,7 @@ class Image(Control):
         self.__pos_image = (0, 0)
 
 
-        # Como un no interactúa con el usuario, lo primero es hacer que no reciba el foco, y ademas el normal, hover y down deben ser 
+        # Como no interactúa con el usuario, lo primero es hacer que no reciba el foco, y ademas el normal, hover y down deben ser 
         # del mismo color, que será transparente por default. Este comportamiento puede ser cambiado por el usuario
         self.focusable = False  # El label no puede recibir el foco
         self.background.normal_color = Color.Transparent
@@ -1001,14 +1026,15 @@ class Image(Control):
            creado inicialmente con el tamaño correcto. Se sugieren los siguientes codigos para conseguir esto:
 
            Caso 1:
-                imagen_control = pygame.image.load(img.png)
-                control_img = Image(imagen_control.get_rect(), nombre_control, imagen_control)
-                control_img.pos = (posX, posY)
+                imagen_control = pygame.image.load("img.png")
+                control_img = Image(imagen_control.get_rect(topleft=(posX, posY)), nombre_control, imagen_control)
+                
+                Notar que imagen_control es un objeto pygame.Surface()
 
            Caso 2:
                 rect_control = (posX, posY, img_width, img_height)  # Las dimensiones de la imagen deben conocerse de antemano
                 control_img = Image(rect_control, nombre_control)
-                control_img.load_image(img.png) '''
+                control_img.load_image("img.png") '''
 
         self.image = pygame.image.load(path)
         return self.image
@@ -1064,20 +1090,210 @@ class Image(Control):
             posY = self.get_height() - imgHeight
 
 
-        # Dibuja el texto sobre las superficies del foreground
-        self.foreground.normal_image.blit(self.image, (posX, posY))
-        self.foreground.hover_image.blit(self.image, (posX, posY))
-        self.foreground.down_image.blit(self.image, (posX, posY))
-        self.foreground.disable_image.blit(self.image, (posX, posY))
+        # Dibuja el texto sobre las superficies del midground
+        self.midground.normal_image.blit(self.image, (posX, posY))
+        self.midground.hover_image.blit(self.image, (posX, posY))
+        self.midground.down_image.blit(self.image, (posX, posY))
+        self.midground.disable_image.blit(self.image, (posX, posY))
 
         # Dibuja el borde del control, para que no quede por detras de los textos
 
         if self.border.show:
               # Normal
-            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
               # Hover
-            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Down
-            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
-            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+
+
+
+###########################################################################################################################################
+###########################################################################################################################################
+#####                                                                                                                                 #####
+#####                                 Hasta acá lo que corresponde al primer release (v0.0.1)                                         #####
+#####                                                                                                                                 #####
+###########################################################################################################################################
+###########################################################################################################################################
+
+
+
+class CheckBox(Control):
+    '''Caja de verificacion'''
+
+    def __init__(self, rect, name, value=False):
+        super(CheckBox, self).__init__(rect, name)
+        
+        # Valor del CheckBox
+        self.__value = value
+
+        # Capas intermedias para tener los gráficos checked, unchecked. (ver método render)
+        self.__checked = Layer()
+        self.__unchecked = Layer()
+
+        # Puntos que definen la marca de checked
+        self.__p1 = (self.get_width()*0.2, self.get_height()*0.5)
+        self.__p2 = (self.get_width()*0.4, self.get_height()*0.8)
+        self.__p3 = (self.get_width()*0.8, self.get_height()*0.25)
+
+        # Caracteristicas de la marca
+        self.__border_mark_normal = Border()
+        self.__border_mark_normal.color = Color.ForestGreen
+        self.__border_mark_normal.size = 4
+        self.__border_mark_hover = Border()
+        self.__border_mark_hover.color = Color.DarkSeaGreen
+        self.__border_mark_hover.size = 8
+        self.__border_mark_down = Border()
+        self.__border_mark_down.color = Color.LightGreen
+        self.__border_mark_down.size = 8
+        self.__border_mark_disable = Border()
+        self.__border_mark_disable.color = Color.Gray
+        self.__border_mark_disable.size = 4
+
+
+
+    @property
+    def value(self):
+        '''Propiedad para establecer el estado del check'''
+        return self.__value
+
+    @value.setter
+    def value(self, val):
+        self.__value = val
+
+
+    @property
+    def border_mark_normal(self):
+        '''Tipo de borde para dibujar la marca de checked normal'''
+        return self.__border_mark_normal
+    
+    
+    @border_mark_normal.setter
+    def border_mark_normal(self, val):
+        self.__border_mark_normal = val
+
+    @property
+    def border_mark_hover(self):
+        '''Tipo de borde para dibujar la marca de checked hover'''
+        return self.__border_mark_hover
+    
+    
+    @border_mark_hover.setter
+    def border_mark_hover(self, val):
+        self.__border_mark_hover = val
+    
+    @property
+    def border_mark_down(self):
+        '''Tipo de borde para dibujar la marca de checked down'''
+        return self.__border_mark_down
+    
+    
+    @border_mark_down.setter
+    def border_mark_down(self, val):
+        self.__border_mark_down = val
+
+    @property
+    def border_mark_disable(self):
+        '''Tipo de borde para dibujar la marca de checked disable'''
+        return self.__border_mark_disable
+    
+    
+    @border_mark_disable.setter
+    def border_mark_disable(self, val):
+        self.__border_mark_disable = val
+    
+    
+    
+    
+
+
+    def update(self):
+        '''Actualiza como se mostrara nuestro control segun el modo grafico establecido'''
+
+        # Dibujo los bords con la llamada a la funcion de la clase base
+        super(CheckBox, self).update()
+
+
+        # Superficies para  checked
+        self.__checked.normal_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__checked.hover_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__checked.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__checked.disable_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__checked.normal_image.fill(Color.Transparent)
+        self.__checked.hover_image.fill(Color.Transparent)
+        self.__checked.down_image.fill(Color.Transparent)
+        self.__checked.disable_image.fill(Color.Transparent)
+
+        # Superficies para unchecked. En la version dibujada no tiene importancia, pero cobra valor en la version gráfica
+        self.__unchecked.normal_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__unchecked.hover_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__unchecked.down_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__unchecked.disable_image = pygame.Surface(self.size, pygame.HWSURFACE|pygame.SRCALPHA)
+        self.__unchecked.normal_image.fill(Color.Transparent)
+        self.__unchecked.hover_image.fill(Color.Transparent)
+        self.__unchecked.down_image.fill(Color.Transparent)
+        self.__unchecked.disable_image.fill(Color.Transparent)
+
+
+        # Dibujo el checked
+        pygame.draw.line(self.__checked.normal_image, self.__border_mark_normal.color, self.__p1, self.__p2, self.__border_mark_normal.size)
+        pygame.draw.line(self.__checked.hover_image, self.__border_mark_hover.color, self.__p1, self.__p2, self.__border_mark_hover.size)
+        pygame.draw.line(self.__checked.down_image, self.__border_mark_down.color, self.__p1, self.__p2, self.__border_mark_down.size)
+        pygame.draw.line(self.__checked.disable_image, self.__border_mark_disable.color, self.__p1, self.__p2, self.__border_mark_disable.size)
+        pygame.draw.line(self.__checked.normal_image, self.__border_mark_normal.color, self.__p2, self.__p3, self.__border_mark_normal.size)
+        pygame.draw.line(self.__checked.hover_image, self.__border_mark_hover.color, self.__p2, self.__p3, self.__border_mark_hover.size)
+        pygame.draw.line(self.__checked.down_image, self.__border_mark_down.color, self.__p2, self.__p3, self.__border_mark_down.size)
+        pygame.draw.line(self.__checked.disable_image, self.__border_mark_disable.color, self.__p2, self.__p3, self.__border_mark_disable.size)
+
+        # Dibujo el unchecked
+        # pygame.draw.line(self.__unchecked.normal_image, self.__border_mark_normal.color, self.__p2, self.__p3, self.__border_mark_normal.size)
+        # pygame.draw.line(self.__unchecked.hover_image, self.__border_mark_hover.color, self.__p2, self.__p3, self.__border_mark_hover.size)
+        # pygame.draw.line(self.__unchecked.down_image, self.__border_mark_down.color, self.__p2, self.__p3, self.__border_mark_down.size)
+        # pygame.draw.line(self.__unchecked.disable_image, self.__border_mark_disable.color, self.__p2, self.__p3, self.__border_mark_disable.size)
+        # pygame.draw.line(self.__unchecked.normal_image, self.__border_mark_normal.color, self.__p3, self.__p1, self.__border_mark_normal.size)
+        # pygame.draw.line(self.__unchecked.hover_image, self.__border_mark_hover.color, self.__p3, self.__p1, self.__border_mark_hover.size)
+        # pygame.draw.line(self.__unchecked.down_image, self.__border_mark_down.color, self.__p3, self.__p1, self.__border_mark_down.size)
+        # pygame.draw.line(self.__unchecked.disable_image, self.__border_mark_disable.color, self.__p3, self.__p1, self.__border_mark_disable.size)
+    
+
+        # Dibuja el borde del control
+        if self.border.show:
+              # Normal
+            pygame.draw.rect(self.__checked.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.__unchecked.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+              # Hover
+            pygame.draw.rect(self.__checked.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.__unchecked.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Down
+            pygame.draw.rect(self.__checked.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.__unchecked.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Disable
+            pygame.draw.rect(self.__checked.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.__unchecked.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+
+
+    def render(self, display):
+        '''Dibujar el control en la superficie pasada'''
+
+        # Verifico el estado, para saber cual dibujar
+        if self.__value :
+            self.midground = self.__checked
+        else:
+            self.midground = self.__unchecked
+
+
+        return super(CheckBox, self).render(display)
+
+
+
+
+    def click(self, boton=None):
+        '''Cambia el valor del control'''
+        es_click = super(CheckBox, self).click(boton)
+
+        if es_click and self.enable:
+            self.value = not self.__value 
+
+        return es_click
