@@ -53,6 +53,76 @@ class Layer(object):
 
 
 
+
+
+
+
+
+
+class Font(object):
+    '''Clase para definir las fuentes'''
+
+    pygame.font.init()
+
+    __size = {'Default' :  20,
+              'Small' : 15,
+              'Medium' : 40,
+              'Large' : 60,
+              'Scanner' : 30}
+
+    def set_fontsize(self,v):
+    	'''Devuelve una fuente con el tamaño especificado'''
+        return pygame.font.SysFont(self.__name, v)
+
+
+    def __init__(self, size='Default', color=(0,0,0) ):
+    	self.__name = 'Verdana'
+    	self.__color = color
+    	self.__size = Font.__size[size]
+    	self.__font = self.set_fontsize(Font.__size[size])
+
+    @property
+    def name(self):
+        '''Nombre de la fuente'''
+        return self.__name
+    
+    
+    @name.setter
+    def name(self, val):
+        self.__name = val
+    
+    
+
+    @property
+    def color(self):
+        '''Color de la fuente. Si no se especifica se utiliza color negro'''
+        return self.__color
+    
+    
+    @color.setter
+    def color(self, val):
+        self.__color = val
+
+
+    def render(self, text, antialias, color=None):
+    	'''Devuelve una superficie con el texto dibujado en ella'''
+    	if color == None:
+    		color = self.color
+    	
+    	return self.__font.render(text, antialias, color)
+
+    def size(self, texto):
+    	'''Dimensiones que tendrá la imagen renderizada del texto pasado'''
+    	return self.__font.size(texto) 
+    
+
+
+
+
+
+
+
+
 class Color(object):
 
     # Color Variables
@@ -276,62 +346,3 @@ class Color(object):
 
 
 
-
-
-
-
-
-
-class Font(object):
-    '''Clase para definir las fuentes'''
-
-    pygame.font.init()
-
-    __size = {'Default' :  20,
-              'Small' : 15,
-              'Medium' : 40,
-              'Large' : 60,
-              'Scanner' : 30}
-
-    def set_fontsize(self,v):
-    	'''Devuelve una fuente con el tamaño especificado'''
-        return pygame.font.SysFont(self.__name, v)
-
-
-    def __init__(self, size='Default', color=Color.Black):
-    	self.__name = 'Verdana'
-    	self.__color = color
-    	self.__size = Font.__size[size]
-    	self.__font = self.set_fontsize(Font.__size[size])
-
-    @property
-    def name(self):
-        '''Nombre de la fuente'''
-        return self.__name
-    
-    
-    @name.setter
-    def name(self, val):
-        self.__name = val
-    
-    
-
-    @property
-    def color(self):
-        '''Color de la fuente. Si no se especifica se utiliza color negro'''
-        return self.__color
-    
-    
-    @color.setter
-    def color(self, val):
-        self.__color = val
-
-
-    def render(self, text, antialias):
-    	'''Devuelve una superficie con el texto dibujado en ella'''
-    	return self.__font.render(text, antialias, self.color)
-
-    def size(self, texto):
-    	'''Dimensiones que tendrá la imagen renderizada del texto pasado'''
-    	return self.__font.size(texto) 
-    

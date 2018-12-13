@@ -699,7 +699,9 @@ class Control(pygame.Surface):
 
 
 
-
+    def keydown(self, k=None):
+        '''Método a llamar cuando se presiona una tecla'''
+        pass
 
 
     # METODOS Y FUNCIONES PARA MANEJO DE LA PANTALLA DEL CONTROL
@@ -1275,7 +1277,7 @@ class CheckBox(Control):
 
 
     def render(self, display):
-        '''Dibujar el control en la superficie pasada'''
+        '''Dibuja el control en la superficie pasada'''
 
         # Verifico el estado, para saber cual dibujar
         if self.__value :
@@ -1297,3 +1299,227 @@ class CheckBox(Control):
             self.value = not self.__value 
 
         return es_click
+
+
+
+
+
+class TextBox(Control): 
+    '''Caja de texto'''
+    __tiempo = pygame.time.get_ticks() # Para usar en el parpadeo del cursor
+    __parpadeo = True # Para usar en el parpadeo del cursor
+
+    def __init__(self, rect, name, texto=""):
+
+        super(TextBox, self).__init__(rect, name)
+
+        self.__text = texto
+        self.__cursor = Border()
+        self.__cursorVisible = True
+        self.__cursorFreq = 300
+        self.__cursorPos = len(texto)
+        self.__pos_text = (5,0)
+        self.__align = A_LEFT
+
+        pygame.key.set_repeat(400,100)
+
+    @property
+    def align(self):
+        '''Alineación del texto'''
+        return self.__align
+    
+    
+    @align.setter
+    def align(self, val):
+        self.__align = val
+    
+    
+
+
+    @property
+    def text(self):
+        '''Texto que contiene el control. A diferencia del Label, este texto puede ser modificado por el usuario, por lo que este
+        control es usado como entrada de texto, mientras que el Label es solo de salida de texto'''
+        return self.__text
+    
+    
+    @text.setter
+    def text(self, texto):
+        self.__text = texto
+    
+
+        # Construye el bitmap de texto 
+        bitmap_normal = self.font.render(texto, True)
+        bitmap_hover = self.font.render(texto, True)
+        bitmap_down = self.font.render(texto, True)
+        bitmap_disable = self.font.render(texto, True, self.midground.disable_color)
+        bitmapWidth, bitmapHeight = self.font.size(texto) 
+
+        # Calculo la posicion
+            # Valor del usuario
+        if self.align == A_MANUAL:
+            posX, posY = self.pos_text
+        
+            # Posicion X
+        if self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
+            posX = 0
+        
+        if self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
+            posX = self.get_width()/2 - bitmapWidth/2
+
+        if self.align == A_RIGHT or self.align == A_BOTTOMRIGHT or self.align == A_TOPRIGHT:
+            posX = self.get_width() - bitmapWidth 
+
+            # Posicion Y
+        if self.align == A_TOPLEFT or self.align == A_TOP or self.align == A_TOPRIGHT:
+            posY = 0
+        
+        if self.align == A_CENTER or self.align == A_LEFT or self.align == A_RIGHT:
+            posY = self.get_height()/2 - bitmapHeight/2
+
+        if self.align == A_BOTTOMLEFT or self.align == A_BOTTOMRIGHT or self.align == A_BOTTOM:
+            posY = self.get_height() - bitmapHeight
+
+        # Dibujo el texto sobre el midground
+        self.midground.normal_image.fill(self.midground.normal_color)
+        self.midground.normal_image.blit(bitmap_normal, (posX, posY))
+        self.midground.hover_image.fill(self.midground.hover_color)
+        self.midground.hover_image.blit(bitmap_hover, (posX, posY))
+        self.midground.down_image.fill(self.midground.down_color)
+        self.midground.down_image.blit(bitmap_down, (posX, posY))
+        self.midground.disable_image.fill(self.midground.disable_color)
+        self.midground.disable_image.blit(bitmap_disable, (posX, posY))
+
+
+
+
+
+
+    @property
+    def pos_text(self):
+        '''Tupla con la posicion del texto dentro del TextBox.'''
+        return self.__pos_text
+    
+    
+    @pos_text.setter
+    def pos_text(self, val):
+        self.__pos_text = val
+
+
+    @property
+    def cursorPos(self):
+        '''Define la posicion del cursor en caracteres'''
+        return self.__cursorPos
+
+    @cursorPos.setter
+    def cursorPos(self, pos):
+        self.__cursorPos = pos
+    
+
+    def movCursorIzq(self):
+        '''Mueve el cursos un caracter hacia la izquierda'''
+        self.__cursorPos -= 1
+        if self.__cursorPos < 0:
+            self.__cursorPos = 0
+
+        return self.cursorPos
+
+
+    def movCursorDer(self):
+        '''Mueve el cursos un caracter hacia la derecha'''
+        self.__cursorPos += 1
+        if self.__cursorPos > len(self.text):
+            self.__cursorPos = len(self.text)
+
+        return self.cursorPos
+
+    def keydown(self, k=None):
+
+        #esKeyDown = super(TextBox,self).keydown(k) 
+        if self.enable and self.is_focus():
+            esKeyDown = True
+        else:
+            esKeyDown = False
+
+
+        if esKeyDown:
+            if k.key == pygame.K_LEFT:
+                #nuevo = self.text
+                self.movCursorIzq()
+
+            elif k.key == pygame.K_RIGHT:
+                #nuevo = self.text
+                self.movCursorDer()
+
+
+            elif k.key == pygame.K_BACKSPACE:
+                self.text = self.text[:self.__cursorPos][:-1] + self.text[self.__cursorPos:]
+                self.movCursorIzq()
+
+            elif k.key == pygame.K_DELETE:
+                self.text = self.text[:self.__cursorPos] + self.text[self.__cursorPos+1:]
+
+            #elif k.key == pygame.K_RETURN:  # Para que no haga nada
+            #    nuevo = self.text
+            
+            else:
+                self.text = self.text[:self.__cursorPos] + k.unicode + self.text[self.__cursorPos:]
+                #self.foreground.normal_image
+                self.movCursorDer()
+            
+
+        return esKeyDown
+
+    def render(self, display):
+        '''Dibuja el control en la superficie pasada'''
+
+
+        dibCursor = super(TextBox, self).render(display)
+
+        tiemporTranscurrido = pygame.time.get_ticks() - TextBox.__tiempo
+        if tiemporTranscurrido > self.__cursorFreq:
+            TextBox.__tiempo = pygame.time.get_ticks()
+            TextBox.__parpadeo = not TextBox.__parpadeo
+
+        if  dibCursor and self.enable and self.is_focus() and TextBox.__parpadeo :
+            anchoTexto, altoTexto = self.font.size(self.__text[0:self.__cursorPos])
+            posXcur = self.left + self.__pos_text[0] + anchoTexto
+            if posXcur < self.left + self.get_width():
+                pygame.draw.line(display, Color.Blue , (posXcur , self.top + self.__pos_text[1]), (posXcur , self.top + self.__pos_text[1]+ altoTexto) , 2)
+#self.foreground.normal_color
+        return dibCursor
+
+    def click(self, c=None):  
+        ''' '''
+        # c es el evento de MOUSEBUTTONDOWN 
+        # c.pos -> posicion del click 
+        # c.button -> boton del click (1 es el principal, 2 es secundario, 3 es central, 4 es rueda arriba, 5 es rueda abajo)
+         
+        #super(Textbox, self).click(c, screen)
+
+        hover = super(TextBox, self).click(c) 
+        
+        if hover:
+            posClick = c.pos
+
+            if posClick[0] > self.left+self.__pos_text[0]+self.font.size(self.__text)[0]:
+                self.__cursorPos = len(self.__text)
+                return hover
+            
+            if posClick[0] < self.left+self.__pos_text[0]:
+                self.__cursorPos = 0
+                return hover
+
+            else:
+                tamizqant = 0
+
+                for i in range(0,len(self.__text)+1):
+                    izq = self.__text[0:i]
+                    tamizq = self.font.size(izq)[0]
+                    if posClick[0] > self.left + self.__pos_text[0] + tamizqant+ (tamizq-tamizqant)/2:
+                        tamizqant = tamizq
+                    else:    
+                        self.__cursorPos = len(izq) -1
+                        break    
+
+        return hover
