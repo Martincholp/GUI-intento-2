@@ -1048,8 +1048,8 @@ class Image(Control):
 
         if self.image != None:
             # El mismo tamño del control, las mismas caracteristicas que la imagen actual
-            print self.size
-            print self.image
+            #print self.size
+            #print self.image
             nueva = pygame.Surface(self.size, 0, self.image)  
             pygame.transform.smoothscale(self.image, self.size, nueva)
             self.image = nueva
@@ -1315,11 +1315,25 @@ class TextBox(Control):
 
         self.__text = texto
         self.__cursor = Border()
+        self.__cursor.size = 1
         self.__cursorVisible = True
         self.__cursorFreq = 300
         self.__cursorPos = len(texto)
         self.__pos_text = (5,0)
-        self.__align = A_LEFT
+        self.__align = A_RIGHT
+
+        # Hago blanco los colores del fondo para todos los estados
+        self.background.normal_color = Color.White
+        self.background.hover_color = Color.White
+        self.background.down_color = Color.White
+
+        # Hago transparentes los medioplanos y planos frontales
+        self.midground.normal_color = Color.Transparent
+        self.midground.hover_color = Color.Transparent
+        self.midground.down_color = Color.Transparent
+        self.foreground.normal_color = Color.Transparent
+        self.foreground.hover_color = Color.Transparent
+        self.foreground.down_color = Color.Transparent
 
         pygame.key.set_repeat(400,100)
 
@@ -1359,26 +1373,28 @@ class TextBox(Control):
             # Valor del usuario
         if self.align == A_MANUAL:
             posX, posY = self.pos_text
+            posX += self.border.size
+            posY += self.border.size
         
             # Posicion X
         if self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
-            posX = 0
+            posX = 0 + self.border.size
         
         if self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
             posX = self.get_width()/2 - bitmapWidth/2
 
         if self.align == A_RIGHT or self.align == A_BOTTOMRIGHT or self.align == A_TOPRIGHT:
-            posX = self.get_width() - bitmapWidth 
+            posX = self.get_width() - bitmapWidth - self.border.size
 
             # Posicion Y
         if self.align == A_TOPLEFT or self.align == A_TOP or self.align == A_TOPRIGHT:
-            posY = 0
+            posY = 0 + self.border.size
         
         if self.align == A_CENTER or self.align == A_LEFT or self.align == A_RIGHT:
             posY = self.get_height()/2 - bitmapHeight/2
 
         if self.align == A_BOTTOMLEFT or self.align == A_BOTTOMRIGHT or self.align == A_BOTTOM:
-            posY = self.get_height() - bitmapHeight
+            posY = self.get_height() - bitmapHeight - self.border.size
 
         # Dibujo el texto sobre el midground
         self.midground.normal_image.fill(self.midground.normal_color)
@@ -1390,6 +1406,20 @@ class TextBox(Control):
         self.midground.disable_image.fill(self.midground.disable_color)
         self.midground.disable_image.blit(bitmap_disable, (posX, posY))
 
+        
+
+
+        # Dibuja el borde del control
+
+        if self.border.show:
+              # Normal
+            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+              # Hover
+            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Down
+            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+              # Disable
+            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
 
@@ -1417,7 +1447,7 @@ class TextBox(Control):
     
 
     def movCursorIzq(self):
-        '''Mueve el cursos un caracter hacia la izquierda'''
+        '''Mueve el cursor un caracter hacia la izquierda'''
         self.__cursorPos -= 1
         if self.__cursorPos < 0:
             self.__cursorPos = 0
@@ -1426,7 +1456,7 @@ class TextBox(Control):
 
 
     def movCursorDer(self):
-        '''Mueve el cursos un caracter hacia la derecha'''
+        '''Mueve el cursor un caracter hacia la derecha'''
         self.__cursorPos += 1
         if self.__cursorPos > len(self.text):
             self.__cursorPos = len(self.text)
@@ -1435,7 +1465,6 @@ class TextBox(Control):
 
     def keydown(self, k=None):
 
-        #esKeyDown = super(TextBox,self).keydown(k) 
         if self.enable and self.is_focus():
             esKeyDown = True
         else:
@@ -1444,13 +1473,10 @@ class TextBox(Control):
 
         if esKeyDown:
             if k.key == pygame.K_LEFT:
-                #nuevo = self.text
                 self.movCursorIzq()
 
             elif k.key == pygame.K_RIGHT:
-                #nuevo = self.text
                 self.movCursorDer()
-
 
             elif k.key == pygame.K_BACKSPACE:
                 self.text = self.text[:self.__cursorPos][:-1] + self.text[self.__cursorPos:]
@@ -1458,14 +1484,11 @@ class TextBox(Control):
 
             elif k.key == pygame.K_DELETE:
                 self.text = self.text[:self.__cursorPos] + self.text[self.__cursorPos+1:]
-
-            #elif k.key == pygame.K_RETURN:  # Para que no haga nada
-            #    nuevo = self.text
             
             else:
                 self.text = self.text[:self.__cursorPos] + k.unicode + self.text[self.__cursorPos:]
-                #self.foreground.normal_image
-                self.movCursorDer()
+                if str(k.unicode) != '':  # Verifico que lo que se este presionando no sea solo un mods (shift, ctrl, alt)
+                    self.movCursorDer()
             
 
         return esKeyDown
@@ -1474,20 +1497,55 @@ class TextBox(Control):
         '''Dibuja el control en la superficie pasada'''
 
 
-        dibCursor = super(TextBox, self).render(display)
+        textoListo = super(TextBox, self).render(display)
 
         tiemporTranscurrido = pygame.time.get_ticks() - TextBox.__tiempo
         if tiemporTranscurrido > self.__cursorFreq:
             TextBox.__tiempo = pygame.time.get_ticks()
             TextBox.__parpadeo = not TextBox.__parpadeo
 
-        if  dibCursor and self.enable and self.is_focus() and TextBox.__parpadeo :
+        if  textoListo and self.enable and self.is_focus() and TextBox.__parpadeo and self.__cursor.show:
             anchoTexto, altoTexto = self.font.size(self.__text[0:self.__cursorPos])
-            posXcur = self.left + self.__pos_text[0] + anchoTexto
+
+            # Defino la posición X del cursor según la alineación
+            if self.align == A_MANUAL:
+                posXcur = self.left + self.__pos_text[0] + anchoTexto + self.border.size
+
+            elif self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
+                posXcur = self.left + anchoTexto + self.border.size
+
+
+            elif self.align == A_RIGHT or self.align == A_TOPRIGHT or self.align == A_BOTTOMRIGHT:
+                posXcur = self.left + self.get_width() - self.font.size(self.__text)[0] + anchoTexto - self.border.size
+
+            elif self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
+                posXcur = self.left + self.get_width()/2 - self.font.size(self.__text)[0]/2 + anchoTexto
+
+            # Defino la posición Y del cursor según la alineación
+            if self.align == A_MANUAL:
+                posYcur0 = self.top + self.__pos_text[1] + self.border.size
+                posYcur1 = self.top + self.__pos_text[1] + altoTexto + self.border.size
+
+
+            elif self.align == A_TOPLEFT or self.align == A_TOP or self.align == A_TOPRIGHT:
+                posYcur0 = self.top + self.border.size
+                posYcur1 = self.top + altoTexto + self.border.size
+
+
+            elif self.align == A_LEFT or self.align == A_CENTER or self.align == A_RIGHT:
+                posYcur0 = self.top + self.get_height()/2 - altoTexto/2
+                posYcur1 = self.top + self.get_height()/2 + altoTexto/2
+
+            elif self.align == A_BOTTOMLEFT or self.align == A_BOTTOM or self.align == A_BOTTOMRIGHT:
+                posYcur0 = self.top + self.get_height() - altoTexto - self.border.size
+                posYcur1 = self.top + self.get_height() - self.border.size 
+
+            
+
             if posXcur < self.left + self.get_width():
-                pygame.draw.line(display, Color.Blue , (posXcur , self.top + self.__pos_text[1]), (posXcur , self.top + self.__pos_text[1]+ altoTexto) , 2)
-#self.foreground.normal_color
-        return dibCursor
+                pygame.draw.line(display, self.__cursor.color , (posXcur , posYcur0), (posXcur , posYcur1) , self.__cursor.size)
+
+        return textoListo
 
     def click(self, c=None):  
         ''' '''
@@ -1502,11 +1560,31 @@ class TextBox(Control):
         if hover:
             posClick = c.pos
 
-            if posClick[0] > self.left+self.__pos_text[0]+self.font.size(self.__text)[0]:
+            dimText = self.font.size(self.__text)
+
+            # Defino la posición del cursor según la alineación. iniText será el pixel horizontal donde inicia el texto, contando desde el
+            # lado izquierdo del control
+            if self.align == A_MANUAL:
+                iniText = self.__pos.text[0]  
+
+            elif self.align == A_LEFT or self.align == A_TOPLEFT or self.align == A_BOTTOMLEFT:
+                iniText = 0
+
+            elif self.align == A_RIGHT or self.align == A_TOPRIGHT or self.align == A_BOTTOMRIGHT:
+                iniText = self.get_width() - dimText[0]
+
+            elif self.align == A_CENTER or self.align == A_TOP or self.align == A_BOTTOM:
+                iniText = self.get_width()/2 - dimText[0]/2
+
+
+
+            # Analizo donde se produjo el click
+
+            if posClick[0] > self.left + iniText + dimText[0]:
                 self.__cursorPos = len(self.__text)
                 return hover
             
-            if posClick[0] < self.left+self.__pos_text[0]:
+            if posClick[0] < self.left + iniText:
                 self.__cursorPos = 0
                 return hover
 
@@ -1516,7 +1594,7 @@ class TextBox(Control):
                 for i in range(0,len(self.__text)+1):
                     izq = self.__text[0:i]
                     tamizq = self.font.size(izq)[0]
-                    if posClick[0] > self.left + self.__pos_text[0] + tamizqant+ (tamizq-tamizqant)/2:
+                    if posClick[0] > self.left + iniText + tamizqant + (tamizq-tamizqant)/2:
                         tamizqant = tamizq
                     else:    
                         self.__cursorPos = len(izq) -1
