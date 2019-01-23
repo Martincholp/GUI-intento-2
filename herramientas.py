@@ -46,19 +46,6 @@ class Layer(object):
         self.disable_image = None
 
 
-                
-
-
-    
-
-
-
-
-
-
-
-
-
 class Font(object):
     '''Clase para definir las fuentes'''
 
@@ -74,12 +61,21 @@ class Font(object):
     	'''Devuelve una fuente con el tamaño especificado'''
         return pygame.font.SysFont(self.__name, v)
 
+    def get_fontsize(self):
+        '''Devuelve el tamaño de la fuente actual'''
+        return self.__size
+
 
     def __init__(self, size='Default', color=(0,0,0) ):
     	self.__name = 'Verdana'
     	self.__color = color
-    	self.__size = Font.__size[size]
-    	self.__font = self.set_fontsize(Font.__size[size])
+
+        if size in Font.__size.keys():
+            self.__size = Font.__size[size]
+        else:
+            self.__size = size
+
+    	self.__font = self.set_fontsize(self.__size)
 
     @property
     def name(self):
@@ -115,13 +111,6 @@ class Font(object):
     	'''Dimensiones que tendrá la imagen renderizada del texto pasado'''
     	return self.__font.size(texto) 
     
-
-
-
-
-
-
-
 
 class Color(object):
 

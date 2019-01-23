@@ -32,6 +32,7 @@ class Screen(object):
             if name != Screen.__current.name:  # Si el nombre de current es igual a la que cambio, entonces no hago nada
                 Screen.__prev = Screen.__current
                 Screen.__current = Screen.__screens[name]
+                Screen.__current.clean_focus()
         else:
             # Si inicialmente el current era None estoy comenzado, entonces inicializo las dos con la pantalla pasada
             Screen.__current = Screen.__screens[name]
@@ -231,6 +232,10 @@ class Screen(object):
     def get_focus(self):
         '''Devuelvo el control que tiene el foco'''
         return self.__focus
+
+    def clean_focus(self):
+        '''Quito el foco de los controles'''
+        self.__focus = None
 
     def focus_next(self):
         '''Pasa el foco al siguiente control de la lista, o al siguiente elemento del control si lo tuviera.'''
@@ -801,8 +806,17 @@ class Button(Control):
         '''Actualiza los gráficos del control'''
         super(Button, self).update()
 
+
+        # Colores del texto para hover, down y disable
+        fontHover = Font(self.font.get_fontsize(), self.foreground.hover_color)
+        fontDown = Font(self.font.get_fontsize(), self.foreground.down_color)
+        fontDisable = Font(self.font.get_fontsize(), self.foreground.disable_color)
+
         # Texto renderizado
         imgtexto = self.font.render(self.caption, True)
+        imgtexto_hover = fontHover.render(self.caption, True)
+        imgtexto_down = fontDown.render(self.caption, True)
+        imgtexto_disable = fontDisable.render(self.caption, True)
         
         # Obtiene las dimensiones del texto
         imgtextoWidth, imgtextoHeight = self.font.size(self.caption) 
@@ -834,22 +848,22 @@ class Button(Control):
 
 
         # Dibuja el texto sobre las superficies del midground
-        self.midground.normal_image.blit(imgtexto, (posX, posY))
-        self.midground.hover_image.blit(imgtexto, (posX, posY))
-        self.midground.down_image.blit(imgtexto, (posX, posY))
-        self.midground.disable_image.blit(imgtexto, (posX, posY))
+        self.foreground.normal_image.blit(imgtexto, (posX, posY))
+        self.foreground.hover_image.blit(imgtexto_hover, (posX, posY))
+        self.foreground.down_image.blit(imgtexto_down, (posX, posY))
+        self.foreground.disable_image.blit(imgtexto_disable, (posX, posY))
 
         # Dibuja el borde del control, para que no quede por detras de los textos
 
         if self.border.show:
               # Normal
-            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
               # Hover
-            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Down
-            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
-            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
 class Label(Control):
@@ -870,6 +884,12 @@ class Label(Control):
         col = self.background.normal_color
         self.background.hover_color = col
         self.background.down_color = col
+        self.midground.normal_color = col
+        self.midground.hover_color = col
+        self.midground.down_color = col
+        self.foreground.normal_color = col
+        self.foreground.hover_color = col
+        self.foreground.down_color = col
 
 
 
@@ -910,8 +930,16 @@ class Label(Control):
 
         super(Label, self).update()
 
+        # Colores del texto para hover, down y disable
+        fontHover = Font(self.font.get_fontsize(), self.foreground.hover_color)
+        fontDown = Font(self.font.get_fontsize(), self.foreground.down_color)
+        fontDisable = Font(self.font.get_fontsize(), self.foreground.disable_color)
+
         # Texto renderizado
         imgtexto = self.font.render(self.text, True)
+        imgtexto_hover = fontHover.render(self.text, True)
+        imgtexto_down = fontDown.render(self.text, True)
+        imgtexto_disable = fontDisable.render(self.text, True)
         
         # Obtiene las dimensiones del texto
         imgtextoWidth, imgtextoHeight = self.font.size(self.text) 
@@ -942,23 +970,23 @@ class Label(Control):
             posY = self.get_height() - imgtextoHeight
 
 
-        # Dibuja el texto sobre las superficies del midground
-        self.midground.normal_image.blit(imgtexto, (posX, posY))
-        self.midground.hover_image.blit(imgtexto, (posX, posY))
-        self.midground.down_image.blit(imgtexto, (posX, posY))
-        self.midground.disable_image.blit(imgtexto, (posX, posY))
+        # Dibuja el texto sobre las superficies del foreground
+        self.foreground.normal_image.blit(imgtexto, (posX, posY))
+        self.foreground.hover_image.blit(imgtexto_hover, (posX, posY))
+        self.foreground.down_image.blit(imgtexto_down, (posX, posY))
+        self.foreground.disable_image.blit(imgtexto_disable, (posX, posY))
 
         # Dibuja el borde del control, para que no quede por detras de los textos
 
         if self.border.show:
               # Normal
-            pygame.draw.rect(self.midground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
+            pygame.draw.rect(self.foreground.normal_image, self.border.color, (0,0,self.get_width(),self.get_height()), self.border.size)
               # Hover
-            pygame.draw.rect(self.midground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.foreground.hover_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Down
-            pygame.draw.rect(self.midground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.foreground.down_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
               # Disable
-            pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
+            pygame.draw.rect(self.foreground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
 class Image(Control):
