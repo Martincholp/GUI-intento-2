@@ -5,7 +5,15 @@ from herramientas import *
 from locales import *
 from exceptions import *
 
-'''Módulo con los controles más comunes en la implementación de una interfaz gráfica.'''
+'''Módulo con los controles más comunes en la implementación de una interfaz gráfica.
+Controles incluidos en este módulo:
+  Screen:    Define una pantalla a mostrar
+  Control:   Clase base de la cual derivan todos los controles del módulo
+  Button:    Botón de acción
+  Label:     Etiqueta para mostrar un texto estático
+  Image:     Contenedor para mostrar unaimagen estática
+  CheckBox:  Caja de verificación
+  TextBox:   Caja de texto para interacción con el usuario'''
 
 class Screen(object):
     """Clase que agrupa un conjunto de controles que define una pantalla. Recibe solo un parámetro, que es un string
@@ -953,8 +961,6 @@ class Label(Control):
             pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
-
-
 class Image(Control):
     '''Contenedor para mostrar una imagen'''
 
@@ -1111,7 +1117,6 @@ class Image(Control):
             pygame.draw.rect(self.midground.disable_image, self.border.color, (0,0,self.get_width(),self.get_height()),self.border.size)
 
 
-
 ###########################################################################################################################################
 ###########################################################################################################################################
 #####                                                                                                                                 #####
@@ -1119,7 +1124,6 @@ class Image(Control):
 #####                                                                                                                                 #####
 ###########################################################################################################################################
 ###########################################################################################################################################
-
 
 
 class CheckBox(Control):
@@ -1299,9 +1303,6 @@ class CheckBox(Control):
             self.value = not self.__value 
 
         return es_click
-
-
-
 
 
 class TextBox(Control): 
@@ -1601,3 +1602,12 @@ class TextBox(Control):
                         break    
 
         return hover
+
+
+###########################################################################################################################################
+###########################################################################################################################################
+#####                                                                                                                                 #####
+#####                                 Hasta acá lo que corresponde al segundo release (v0.0.2)                                        #####
+#####                                                                                                                                 #####
+###########################################################################################################################################
+###########################################################################################################################################
